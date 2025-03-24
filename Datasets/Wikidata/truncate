@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+
+../../Scripts/truncate --s="^<http://www\.wikidata\.org/entity/Q" --p="^<http://www\.wikidata\.org/prop/direct/P" --o="<http://www\.wikidata\.org/entity/Q" $1
