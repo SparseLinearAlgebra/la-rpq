@@ -29,5 +29,8 @@ pip install -r requirements.txt
 Queries are all paths. For evaluating single-source/single destination benchmarks you need to explicitly specify the sources.
 
 ```
-./deprefix-sparql ./sparql-queries.txt ./rpqbench-mm ./rpqbench-queries
+# Remove prefixes from the original queries.
+./deprefix-sparql ./sparql-queries.txt > ./sparql-queries-trunc.txt
+# Convert queries to a set of Matrix-Market files.
+./sparql-to-fa ./sparql-queries-trunc.txt ./rpqbench-mm ./rpqbench-queries
 ```
