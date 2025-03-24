@@ -1,0 +1,210 @@
+#!/usr/bin/env python
+
+from __future__ import annotations
+
+import os
+import argparse as ap
+from pyformlang.regular_expression.regex import Regex
+
+mm_prelude = """%%MatrixMarket matrix coordinate pattern general
+%%GraphBLAS type bool
+"""
+
+p = ap.ArgumentParser(
+    formatter_class=ap.RawDescriptionHelpFormatter,
+    description=
+"""
+Converts SPARQL query set into sets of adjacency matrices.
+
+The script loads the edge-labeled graph with enumerated vertices and labels and
+maps input SPARQL regular queries into an NFAs represented by adjacency matrix
+decomposition.
+
+Usage: python3 ./convert-sparql-to-fa.py <queries> <graph> <output-dir>
+
+It's expected for the input queries file lines to be in such format:
+<query number>,<source or ?var> <query> <destination or ?var>
+Example:
+1,<Q10281806> (<P131>)* ?x1
+2,<Q11193> (<P279>)* ?x1
+
+It's expected for the input graph to be represented in the following format:
+- '<output-dir>/<number>.txt' is an adjacency matrix in Matrix-Market format
+  for the label <number>
+- '<output-dir>/vertices.txt' is a map from vertices to its number
+- '<output-dir>/edges.txt' is a map from edges to its number
+For getting it, refer to nt-to-mm script
+
+Resulting output:
+- '<query number>/<label>.mtx' is an adjacency matrix for the label
+- '<query number>/meta.txt' is query meta, starting/final vertices,
+  and used labels
+""")
+p.add_argument('input', help='Input SPARQL queries file')
+p.add_argument('graph', help='Input graph in Matrix-Market format file')
+p.add_argument('output', help='Output dir')
+
+args = p.parse_args()
+
+class RegAutomaton:
+    """
+    Automaton representation of regular grammar
+    """
+    def __init__(self, regex: Regex):
+        self.enfa = regex.to_epsilon_nfa().minimize()
+
+        self.states = self.enfa.states
+        self.num_states = len(self.states)
+        self.symbols = self.enfa.symbols
+
+        self.enum_states = dict(zip(self.states, range(self.num_states)))
+        self.start_states = [
+            self.enum_states[state] for state in self.enfa.start_states
+        ]
+        self.final_states = [
+            self.enum_states[state] for state in self.enfa.final_states
+        ]
+
+
+    def from_regex_txt(path) -> RegAutomaton:
+        with open(path, "r") as file:
+            s = file.readline().strip()
+            regex = Regex(s)
+
+            return RegAutomaton(regex)
+
+    def load_adjacency_pairs(self) -> None:
+        """
+        Creates boolean matrices for self automaton
+        """
+        res = []
+        for src_node, transition in self.enfa.to_dict().items():
+            for symbol, tgt_node in transition.items():
+                res.append((symbol, self.enum_states[src_node] + 1, self.enum_states[tgt_node] + 1))
+        return res
+
+vertices = {}
+edges = {}
+
+print('Reading vertices...')
+with open(f'{args.graph}/vertices.txt', 'r') as f:
+    for i in f:
+        v, n = i.rsplit(maxsplit=1)
+        vertices[v] = n
+
+print('Reading edges...')
+with open(f'{args.graph}/edges.txt', 'r') as f:
+    for i in f:
+        e, n = i.rsplit(maxsplit=1)
+        edges[e] = n
+
+print('Processing queries...')
+try:
+    os.mkdir(args.output)
+except:
+    pass
+
+with open(args.input, 'r') as f:
+    for raw_query in f:
+        source, query, target = raw_query.split()
+        t = source.find(',')
+        number = source[:t]
+        source = source[t+1:]
+
+        source_s = source[1:-1]
+        target_s = target[1:-1]
+        query_s = query.replace('<', '').replace('>', '').replace('/', ' ').replace(')?', '|$)')
+        while '+' in query_s:
+            end = query_s.rfind('+')
+            j = end - 2
+            opened_p = 1 if query_s[end - 1] == ')' else 0
+            while opened_p != 0:
+                if query_s[j] == ')':
+                    opened_p += 1
+                elif query_s[j] == '(':
+                    opened_p -= 1
+                j -= 1
+            start = j + 1
+            body = query_s[start:end]
+            query_s = f'{query_s[:start]} ({body} {body}*) {query_s[end + 1:]}'
+
+        # Actually I haven't implemented a proper conversion of arbitary 2-RPQ into a parsable one
+        # The script parses only a specific case of them in which inverse labels start with a ^
+
+        #while '^' in query_s:
+        #    start = query_s.find('^')
+        #    j = start + 2
+        #    opened_p = 1 if query_s[start + 1] == '(' else 0
+        #    while opened_p != 0:
+        #        if query_s[j] == '(':
+        #            opened_p += 1
+        #        elif query_s[j] == ')':
+        #            opened_p -= 1
+        #        j -= 1
+        #    start = j + 1
+        #    body = query_s[start:end]
+        #    query_s = f'{query_s[:start]}(^{body}){query_s[end + 1:]}'
+        #TODO: HANDLE 2RPQS
+        #if ('^' in query_s)
+
+
+        print(number, source_s, query_s, target_s)
+
+        r = RegAutomaton(Regex(query_s))
+
+        if source[0] != '?' and f'<{source_s}>' not in vertices or target[0] != '?' and f'<{target_s}>' not in vertices:
+            print(f"{number} skipped, no such node")
+            continue
+
+        not_ok = False
+        for symbol in r.symbols:
+            if (f'<{symbol}>' not in edges) and (f'<{str(symbol)[1:]}>' not in edges):
+                print(f"{number} skipped, no such edge")
+                not_ok = True
+        if not_ok:
+            continue
+        source_n = vertices[f'<{source_s}>'] if source[0] != '?' else '0'
+        target_n = vertices[f'<{target_s}>'] if target[0] != '?' else '0'
+
+
+        query_dir = f'{args.output}/{number}/'
+        try:
+            os.mkdir(query_dir)
+        except:
+            pass
+
+        with open(f'{query_dir}meta.txt', 'w') as meta_f:
+            meta_f.write(f'{source_n} {target_n}\n')
+            meta_f.write(f'{len(r.start_states)} ')
+            for symbol in r.start_states:
+                meta_f.write(f'{symbol + 1} ')
+            meta_f.write('\n')
+            meta_f.write(f'{len(r.final_states)} ')
+            for symbol in r.final_states:
+                meta_f.write(f'{symbol + 1} ')
+            meta_f.write('\n')
+            meta_f.write(f'{len(r.symbols)} ')
+            for symbol in r.symbols:
+                symbol_n = edges[f'<{symbol}>'] if str(symbol)[0] != '^' else '-' + edges[f'<{str(symbol)[1:]}>']
+                meta_f.write(f'{symbol_n} ')
+
+        with open(f'{query_dir}raw.txt', 'w') as raw_f:
+            raw_f.write(raw_query)
+
+        transitions = r.load_adjacency_pairs()
+        for symbol in r.symbols:
+            symbol_n = edges[f'<{symbol}>'] if str(symbol)[0] != '^' else '-' + edges[f'<{str(symbol)[1:]}>']
+            with open(f'{query_dir}{symbol_n}.txt', 'w') as symbol_f:
+                entry_c = 0
+                for pred, src, target in transitions:
+                    if pred != symbol:
+                        continue
+                    entry_c += 1
+
+                symbol_f.write(mm_prelude)
+                symbol_f.write(f'{max(len(r.states), 2)} {max(len(r.states), 2)} {entry_c}\n')
+                for pred, src, target in transitions:
+                    if pred != symbol:
+                        continue
+                    symbol_f.write(f"{src} {target}\n")
+
