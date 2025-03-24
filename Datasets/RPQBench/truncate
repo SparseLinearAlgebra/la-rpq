@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+
+../../Scripts/truncate --s="^(<http://localhost|_)" --p=".*" --o="^(<http://localhost|_)" $1
