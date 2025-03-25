@@ -45,12 +45,9 @@ j = 0
 for line in f:
     s = line.split()
 
-    v1 = s[0]
-    v1 = v1[v1.find('#')+1:-1] if v1.find('#') != -1 else v1[v1.rfind('/')+1:-1]
-    p = s[1]
-    p = p[p.find('#')+1:-1] if p.find('#') != -1 else p[p.rfind('/')+1:-1]
-    v2 = (" ".join(s[2:]))[:-2]
-    v2 = v2[v2.find('#')+1:-1] if v2.find('#') != -1 else v2[v2.rfind('/')+1:-1]
+    v1 = s[0][1:-1]
+    p = s[1][1:-1]
+    v2 = s[2][1:-1]
 
     if v1 not in vs:
         i = i + 1
