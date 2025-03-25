@@ -100,7 +100,7 @@ with open(f'{args.graph}/edges.txt', 'r') as f:
 
 print('Processing queries...')
 try:
-    os.mkdir(args.output)
+    os.makedirs(args.output)
 except:
     pass
 

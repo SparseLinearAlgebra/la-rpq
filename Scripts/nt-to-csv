@@ -27,7 +27,7 @@ p.add_argument('output', help='Output dir')
 args = p.parse_args()
 
 d = args.output
-os.mkdir(d)
+os.makedirs(d)
 
 f =  open(args.input, 'r')
 fv = open(f'{d}/Vertex.csv', 'w')

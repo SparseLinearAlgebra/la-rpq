@@ -30,7 +30,7 @@ mm_prelude = """%%MatrixMarket matrix coordinate pattern general
 """
 
 d = args.output
-os.mkdir(d)
+os.makedirs(d)
 
 f =  open(args.input, 'r')
 fv = open(f'{d}/vertices.txt', 'w')
