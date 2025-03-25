@@ -1,0 +1,76 @@
+#!/usr/bin/env python
+
+import argparse as ap
+import re
+import sys
+from random import randint, choice
+from sys import stdin
+import os
+
+p = ap.ArgumentParser(description='Generate RPQ-bench queries')
+
+p.add_argument('input', help='Input SPARQL template file (see sparql-queries-template.txt)')
+p.add_argument('dataset', help='Input truncated dataset')
+p.add_argument('--count', type=int, help='Query count per single type (default: 20)', default=20)
+p.add_argument('--output', nargs='?', help='Output dir to generate multiple files (default: stdout)', default=None)
+
+args = p.parse_args()
+
+persons = set()
+ac = 0
+ipc = 0
+jc = 0
+
+def add_node(s):
+    global ac, ipc, jc, persons
+
+    m0 = re.findall(r"<Article(\d+)>", sub)
+    if len(m0) > 0:
+        ac = max(ac, int(m0[0]))
+        return
+
+    m0 = re.findall(r"<Inproceeding(\d+)>", sub)
+    if len(m0) > 0:
+        ipc = max(ipc, int(m0[0]))
+        return
+
+    m0 = re.findall(r"<(\d+)>", sub)
+    if len(m0) > 0:
+        jc = max(jc, int(m0[0]))
+        return
+
+    m0 = re.findall(r"<([a-zA-Z_]*)>", sub)
+    if len(m0) > 0:
+        persons.add(m0[0])
+        return
+
+with open(args.dataset, 'r') as f:
+    for i in f:
+        s = i.strip()[:-1].strip()
+        sub, _, obj = s.split(maxsplit=2)
+        add_node(sub)
+        add_node(obj)
+
+
+def sub_templ(s):
+    return s.replace('{article}', f'Article{randint(1, ac)}').replace('{inproceeding}', f'Inproceeding{randint(1, ipc)}').replace('{person}', choice(tuple(persons))).replace('{journal}', str(randint(1, jc)))
+
+if args.output != None:
+    os.makedirs(args.output)
+
+class StdOut:
+    def __enter__(self):
+        return sys.stdout
+
+    def __exit__(self, typ, val, trace):
+        pass
+
+stdout = StdOut()
+
+with open(args.input, 'r') as f:
+    for i in f:
+        n, q = i.split(',')
+        with (open(args.output + f'/{n}.txt', 'w') if args.output != None else StdOut()) as g:
+            for j in range(1, args.count + 1):
+                q1 = f'{j},' + sub_templ(q)
+                g.write(q1)

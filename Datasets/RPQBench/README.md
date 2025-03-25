@@ -26,11 +26,11 @@ pip install -r requirements.txt
 # For preparing the dataset for RPQ-matrix and MillenniumDB see the corresponding Databases dir.
 ```
 
-Queries are all paths. For evaluating single-source/single destination benchmarks you need to explicitly specify the sources.
+Original queries are all paths. For evaluating single-source/single destination benchmarks we generate random sources and destinations.
 
 ```
-# Remove prefixes from the original queries.
-./deprefix-sparql ./sparql-queries.txt > ./sparql-queries-trunc.txt
+# Generate a set of queries
+./gen-queries ./sparql-queries-templates.txt rpqbench-trunc.nt > rpqbench-queries.txt
 # Convert queries to a set of Matrix-Market files.
-./sparql-to-fa ./sparql-queries-trunc.txt ./rpqbench-mm ./rpqbench-queries
+./sparql-to-fa ./rpqbench-queries.txt ./rpqbench-mm ./rpqbench-queries
 ```
