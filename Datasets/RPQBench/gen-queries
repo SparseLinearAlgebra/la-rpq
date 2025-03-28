@@ -19,7 +19,7 @@ args = p.parse_args()
 persons = set()
 ac = 0
 ipc = 0
-jc = 0
+journals = set()
 
 def add_node(s):
     global ac, ipc, jc, persons
@@ -34,12 +34,12 @@ def add_node(s):
         ipc = max(ipc, int(m0[0]))
         return
 
-    m0 = re.findall(r"<(\d+)>", sub)
+    m0 = re.findall(r"(<\d+>)", sub)
     if len(m0) > 0:
-        jc = max(jc, int(m0[0]))
+        journals.add(m0[0])
         return
 
-    m0 = re.findall(r"<([a-zA-Z_]*)>", sub)
+    m0 = re.findall(r"(<[a-zA-Z_]*>)", sub)
     if len(m0) > 0:
         persons.add(m0[0])
         return
@@ -53,7 +53,7 @@ with open(args.dataset, 'r') as f:
 
 
 def sub_templ(s):
-    return s.replace('{article}', f'Article{randint(1, ac)}').replace('{inproceeding}', f'Inproceeding{randint(1, ipc)}').replace('{person}', choice(tuple(persons))).replace('{journal}', str(randint(1, jc)))
+    return s.replace('{article}', f'<Article{randint(1, ac)}>').replace('{inproceeding}', f'<Inproceeding{randint(1, ipc)}>').replace('{person}', choice(tuple(persons))).replace('{journal}', choice(tuple(journals)))
 
 if args.output != None:
     os.makedirs(args.output)
