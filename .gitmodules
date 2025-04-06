@@ -4,3 +4,6 @@
 [submodule "Datasets/RPQBench/LD-RPQB"]
 	path = Datasets/RPQBench/LD-RPQB
 	url = https://github.com/Mamenglu/LD-RPQB
+[submodule "Databases/RPQ-matrix/rpq-matrix"]
+	path = Databases/RPQ-matrix/rpq-matrix
+	url = https://github.com/adriangbrandon/rpq-matrix
