@@ -1,0 +1,14 @@
+diff --git a/src/query/parser/grammar/sparql/query_visitor.cc b/src/query/parser/grammar/sparql/query_visitor.cc
+index 213124e..127bc52 100644
+--- a/src/query/parser/grammar/sparql/query_visitor.cc
++++ b/src/query/parser/grammar/sparql/query_visitor.cc
+@@ -2125,9 +2125,6 @@ std::string QueryVisitor::iriCtxToString(SparqlParser::IriContext* ctx) {
+     // If it is not absolute, it needs to be expanded with the base IRI
+     auto pos = iri.find(':');
+     if (pos == std::string::npos) {
+-        if (global_info.base_iri.empty()) {
+-            throw QuerySemanticException("The IRI '" + iri + "' is not absolute and the base IRI is not defined");
+-        }
+         iri = global_info.base_iri + iri;
+     }
+     return iri;
