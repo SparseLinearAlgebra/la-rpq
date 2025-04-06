@@ -1,0 +1,58 @@
+#!/usr/bin/env python
+
+import os
+import re
+import socket
+import subprocess
+import time
+import argparse as ap
+
+p = ap.ArgumentParser(description='Supplementary script to run and benchmark RPQ-martix algorithm')
+
+p.add_argument('build', help='RPQ-matrix build dir (e.g. ./rpq-matrix/build/)')
+p.add_argument('dataset', help='Dataset directory (e.g ./dataset/dataset.dat)')
+p.add_argument('queries', help='Queries file or directory')
+p.add_argument('label_count', help='Amount of different labels in the graph')
+p.add_argument('triples_count', help='Amount of different edges (triples) in the graph')
+p.add_argument('--results', help='Results directory name (default: results/)', default='results')
+
+args = p.parse_args()
+
+results_dir = f'./{args.results}'   # results and logs will be written here, folder must exist
+os.makedirs(results_dir, exist_ok=True)
+TEMP_FILE = f'./.temp'
+
+def execute_file(queries):
+    results_file = f'{results_dir}/{os.path.basename(queries)}'
+    with open(queries, 'r') as original_queries, open(TEMP_FILE, 'w') as processed_queries:
+        for line in original_queries.readlines():
+            _,query = line.split(',', maxsplit=2)
+            processed_queries.write(query.replace('?sub', '?x').replace('?obj', '?y').strip() + '#\n')
+
+    CMD = [f'{args.build}/baseline_query',
+        args.dataset,
+        TEMP_FILE,
+        args.label_count,
+        args.triples_count
+    ]
+
+    with open(results_file, 'w') as server_log:
+        p = subprocess.Popen(CMD, stdout=server_log, stderr=server_log)
+        p.communicate()
+        p.wait()
+
+def execute_dir(queries_dir):
+    with os.scandir(queries_dir) as it:
+        for entry in it:
+            if entry.is_file():
+                execute_file(entry.path)
+
+def execute_queries():
+    queries = args.queries
+    if os.path.isdir(queries):
+        execute_dir(queries)
+    else:
+        execute_file(queries)
+
+execute_queries()
+
