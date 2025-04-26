@@ -1,0 +1,3 @@
+[submodule "Databases/MillenniumDB/MillenniumDB"]
+	path = Databases/MillenniumDB/MillenniumDB
+	url = https://github.com/MillenniumDB/MillenniumDB

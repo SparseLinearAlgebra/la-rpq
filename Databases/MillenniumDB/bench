@@ -16,20 +16,21 @@ p = ap.ArgumentParser(description='Run and benchmark MillenniumDB')
 
 p.add_argument('bin', help='MillenniumDB binary dir')
 p.add_argument('database', help='Database directory')
-p.add_argument('queries', help='Queries file')
+p.add_argument('queries', help='Queries file or directory')
+p.add_argument('--heatup', help='Whether to perform heatup run (default: enabled)', default=True, action=ap.BooleanOptionalAction)
 p.add_argument('--timeout', type=int, help='Query timeout in seconds (default: 60)', default=60)
 p.add_argument('--limit', type=int, help='Query answer limit (default: 100000000', default=100000000)
 p.add_argument('--count', type=int, help='How many times to bench the dataset (default: 1)', default=1)
-p.add_argument('--temp', help='Temp directory name (default: .temp)', default='.temp')
+p.add_argument('--results', help='Results directory name (default: results/)', default='results')
 p.add_argument('--port', type=int, help='MillenniumDB port (default: 1234)', default=1234)
 
 args = p.parse_args()
 
 MDB_PATH = f'.' # where you cloned MillenniumDB repo
-OUTPUT_PATH = f'./{args.temp}'   # results and logs will be written here, folder must exist
+OUTPUT_PATH = f'./{args.results}'   # results and logs will be written here, folder must exist
 MDB_DB_FOLDER_PATH = f'{args.database}' # database folder
 
-os.makedirs(OUTPUT_PATH)
+os.makedirs(OUTPUT_PATH, exist_ok=True)
 
 # Buffer used by MillenniumDB 8388608 pages(4kB) == 32GB
 # this is only for the buffer manager (B+Tree pages),
@@ -40,12 +41,15 @@ STRING_POPULATE_SIZE = 1
 
 MDB_PORT = args.port
 
-MDB_CMD = [f'{args.bin}/mdb-server',
-           MDB_DB_FOLDER_PATH,
+
+# Previously provided parameters were
 #           '-b', str(BUFFER_SIZE),
 #           '-s', str(STRING_POPULATE_SIZE),
-           '--timeout', str(args.timeout),
 #           '-l', str(args.limit)
+
+MDB_CMD = [f'{args.bin}/mdb-server',
+           MDB_DB_FOLDER_PATH,
+           '--timeout', str(args.timeout),
            ]
 
 print(" ".join(MDB_CMD))
@@ -55,13 +59,13 @@ print(" ".join(MDB_CMD))
 MDB_QUERY_FILE   = f'{OUTPUT_PATH}/query_file.tmp'
 MDB_RESULTS_FILE = f'{OUTPUT_PATH}/.results.tmp'
 SERVER_LOG_FILE  = f'{OUTPUT_PATH}/mdb_paths.log'
-RESULTS_FILE  = f'{OUTPUT_PATH}/mdb_paths.csv'
+RESULTS_FILE  = f'{OUTPUT_PATH}/results.csv'
 
 # Does not return a string, it writes the query in MDB_QUERY_FILE
 # Designed to work for WDBench queries, not a generic SPARQL property path
 def parse_to_millenniumdb(query):
     with open(MDB_QUERY_FILE, 'w') as file:
-        file.write(f'select ?x1 where {{ {query} }}')
+        file.write(f'select ?x1 where {{ {query.replace("?sub", "?x1").replace("?obj", "?x1")} }}')
 
 
 def start_server():
@@ -108,25 +112,11 @@ def check_port_available():
     if s.connect_ex(location) == 0:
         raise Exception("server port already in use")
 
-
-# Send query to server
-def execute_queries():
-    queries = args.queries
-    print('Loading query data into the cache...')
-    with open(queries) as queries_file:
-        for line in queries_file:
-            query_number, query = line.split(',', 1)
-            query_millennium(query, query_number, second=True)
-    print('Required data has been loaded')
-    for i in range(1):
-        with open(queries) as queries_file:
-            for line in queries_file:
-                query_number, query = line.split(',', 1)
-                print(f'Executing query {query_number}')
-                query_millennium(query, query_number, second=True)
-
-def process_results():
-    with open(SERVER_LOG_FILE, 'r') as server_log, open(RESULTS_FILE, 'w') as results_file:
+def process_results(output_name):
+    results_path = f'results/'
+    output_path = f'{results_path}/{output_name}.csv'
+    os.makedirs(results_path, exist_ok=True)
+    with open(SERVER_LOG_FILE, 'r') as server_log, open(output_path, 'w') as results_file:
         k = 1
         results = 0
         time = 0
@@ -148,27 +138,58 @@ def process_results():
                 results_file.write(f'{k},timeouted\n')
                 k = k + 1
 
+def execute_file(queries):
+    heatup = args.heatup
+    count = args.count
+
+    print('Running file...')
+    if heatup:
+        print('Loading query data into the cache...')
+        with open(queries) as queries_file:
+            for line in queries_file:
+                query_number, query = line.split(',', 1)
+                query_millennium(query, query_number, second=True)
+
+    print('Required data has been loaded')
+    for i in range(count):
+        with open(queries) as queries_file:
+            for line in queries_file:
+                query_number, query = line.split(',', 1)
+                print(f'Executing query {query_number}')
+                query_millennium(query, query_number, second=True)
+
+    process_results(os.path.basename(queries))
+    server_log.truncate(0)
+
+def execute_dir(queries_dir):
+    with os.scandir(queries_dir) as it:
+        for entry in it:
+            if entry.is_file():
+                execute_file(entry.path)
+
+def execute_queries():
+    queries = args.queries
+    if os.path.isdir(queries):
+        execute_dir(queries)
+    else:
+        execute_file(queries)
+
 ########################## BEGIN BENCHMARK EXECUTION ##########################
 server_log = open(SERVER_LOG_FILE, 'w')
 server_process = None
 
 check_port_available()
 
-#print('TIMEOUT', TIMEOUT, 'seconds')
-start_server()
-execute_queries()
+try:
+    start_server()
+    execute_queries()
 
-server_log.close()
-process_results()
-
-# Delete temp file
-#subprocess.Popen(['rm', MDB_RESULTS_FILE], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-#subprocess.Popen(['rm', MDB_QUERY_FILE], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-
-if server_process is not None:
-    max_mem_cmd = f'grep ^VmHWM /proc/{server_process.pid}/status'.split(' ')
-    process = subprocess.Popen(max_mem_cmd, universal_newlines=True, stdout=subprocess.PIPE)
-    out, err = process.communicate()
-    print(out)
-    kill_server()
+    server_log.close()
+finally:
+    if server_process is not None:
+        max_mem_cmd = f'grep ^VmHWM /proc/{server_process.pid}/status'.split(' ')
+        process = subprocess.Popen(max_mem_cmd, universal_newlines=True, stdout=subprocess.PIPE)
+        out, err = process.communicate()
+        print(out)
+        kill_server()
 
