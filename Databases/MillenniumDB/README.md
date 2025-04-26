@@ -23,3 +23,15 @@ cd MillenniumDB
 git apply ../mdb-allow-unprefixed.patch
 cd ..
 ```
+
+## Running and benchmarking
+
+After building MillenniumDB running and benchmarking can be summarized as follows.
+
+```bash
+# Assume MillenniumDB is built inside ./build dir
+./MillenniumDB/build/bin/mdb-import <dataset-nt> <database dir>
+
+# Run the benches.
+./bench <path to dir with MillenniumDB binaries> <database> <query file>
+```
