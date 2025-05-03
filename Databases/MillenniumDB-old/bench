@@ -1,0 +1,230 @@
+#!/usr/bin/env python
+
+# Note this script is adapted version is an adapted version of the original
+# MillenniumDB regular-path-query challenge benchmark script.
+#
+# See !!!
+
+import os
+import re
+import socket
+import subprocess
+import time
+import argparse as ap
+
+p = ap.ArgumentParser(description='Run and benchmark MillenniumDB')
+
+p.add_argument('bin', help='MillenniumDB binary dir')
+p.add_argument('database', help='Database directory')
+p.add_argument('queries', help='Queries file or directory')
+p.add_argument('--semantic', help='ANY|SIMPLE|TRAILS|ALL|ALL_COUNT', default='ANY')
+p.add_argument('--mode', help='dfs|bfs', default='bfs')
+p.add_argument('--index', help='btree|trie', default='trie')
+p.add_argument('--heatup', help='Whether to perform heatup run (default: enabled)', default=True, action=ap.BooleanOptionalAction)
+p.add_argument('--timeout', type=int, help='Query timeout in seconds (default: 60)', default=60)
+p.add_argument('--limit', type=int, help='Query answer limit (default: 100000000', default=100000000)
+p.add_argument('--count', type=int, help='How many times to bench the dataset (default: 1)', default=1)
+p.add_argument('--results', help='Results directory name (default: results/)', default='results')
+p.add_argument('--port', type=int, help='MillenniumDB port (default: 1234)', default=8080)
+
+args = p.parse_args()
+
+LIMIT=args.limit
+MDB_PATH = f'.' # where you cloned MillenniumDB repo
+OUTPUT_PATH = f'./{args.results}'   # results and logs will be written here, folder must exist
+MDB_DB_FOLDER_PATH = f'{args.database}' # database folder
+
+os.makedirs(OUTPUT_PATH, exist_ok=True)
+
+# Buffer used by MillenniumDB 8388608 pages(4kB) == 32GB
+# this is only for the buffer manager (B+Tree pages),
+# MillenniumDB will use more RAM for other things (tries/visited hashmaps)
+#BUFFER_SIZE = 10000000
+BUFFER_SIZE = 1000
+STRING_POPULATE_SIZE = 1
+
+MDB_PORT = args.port
+
+
+# Previously provided parameters were
+#           '-b', str(BUFFER_SIZE),
+#           '-s', str(STRING_POPULATE_SIZE),
+#           '-l', str(args.limit)
+
+MDB_CMD = [f'{args.bin}/server',
+           MDB_DB_FOLDER_PATH,
+#           '-b', str(MDB_BUFFER_SIZE),
+           '--timeout', str(args.timeout),
+           '--path-mode', f'{args.mode}',
+           '--index-mode', 'cache',
+           '--index-type', f'{args.index}'
+           ]
+
+print(" ".join(MDB_CMD))
+
+
+# Path to needed output and input files #
+MDB_QUERY_FILE   = f'{OUTPUT_PATH}/query_file.tmp'
+MDB_RESULTS_FILE = f'{OUTPUT_PATH}/.results.tmp'
+SERVER_LOG_FILE  = f'{OUTPUT_PATH}/mdb_paths.log'
+RESULTS_FILE  = f'{OUTPUT_PATH}/results.csv'
+
+# Does not return a string, it writes the query in MDB_QUERY_FILE
+# Designed to work for WDBench queries, not a generic SPARQL property path
+def parse_to_millenniumdb(query):
+    query = query.replace('?sub', '?x').replace('?obj', '?x')
+    query_parts   = query.strip().split(' ')
+    from_string   = query_parts[0]
+    property_path = " ".join(query_parts[1:len(query_parts) - 1])
+    end_string    = query_parts[len(query_parts) - 1]
+    semantic = args.semantic
+
+    if '?x' in from_string and '?x' in end_string:
+        print('Queries with two variables are not supported')
+        print(query)
+
+    # Parse subject
+    if '?x' in from_string:
+        from_string = f'(?x)=[{semantic} ?p '
+    else:
+        from_string = '(' + from_string.replace('<', '').replace('>', '') + f')=[{semantic} ?p '
+
+    # Parse object
+    if '?x' in end_string:
+        end_string  = ']=>(?x)'
+    else:
+        end_string  = ']=>(' + end_string.replace('<', '').replace('>', '') + ')'
+
+    # Parse SPARQL property path
+    pattern = r"\<[a-zA-Z0-9\/\.\:\#]*\>"
+    path_edges = re.findall(pattern, property_path)
+    clean_property_path = property_path
+
+    for path in path_edges:
+        clean_path          = ':' + path.replace('<', '').replace('>', '')
+        clean_property_path = re.sub(path, clean_path, clean_property_path, flags=re.MULTILINE)
+
+    print(f'MATCH {from_string}{clean_property_path}{end_string} RETURN *')
+    with open(MDB_QUERY_FILE, 'w') as file:
+        file.write(f'MATCH {from_string}{clean_property_path}{end_string} RETURN *')
+        if LIMIT:
+            file.write(f' LIMIT {LIMIT}')
+
+def start_server():
+    global server_process
+    os.chdir(MDB_PATH)
+    print('starting server...')
+
+    server_log.write("[start server]\n")
+    server_process = subprocess.Popen(MDB_CMD, stdout=server_log, stderr=server_log)
+    print(f'pid: {server_process.pid}')
+
+    # Sleep to wait server start
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    location = ("127.0.0.1", MDB_PORT)
+    while s.connect_ex(location) != 0:
+        time.sleep(1)
+
+    print(f'done')
+
+
+def kill_server():
+    global server_process
+    print(f'killing server[{server_process.pid}]...')
+    server_process.kill()
+    server_process.wait()
+    print('done')
+
+
+def query_millennium(query, query_number, results_name, second=False):
+    parse_to_millenniumdb(query)
+    start_time = time.time()
+    with open(MDB_RESULTS_FILE, 'w') as results_file, open(MDB_QUERY_FILE, 'r') as query_file:
+        query_execution = subprocess.Popen(
+            [f'{args.bin}/query'],
+            stdin=query_file,
+            stdout=results_file,
+            stderr=subprocess.DEVNULL)
+        exit_code = query_execution.wait()
+    with open(MDB_RESULTS_FILE, 'r') as temp_result, open(f'{OUTPUT_PATH}/{results_name}.csv', 'a') as all_results:
+        total_time = 0
+        answers = None
+        for i in temp_result.readlines():
+            ex = 'Execution time: '
+            op = 'Optimizer time: '
+            res = 'Found '
+            if i.startswith(ex):
+                total_time += float(i[len(ex):-4])
+            elif i.startswith(op):
+                total_time += float(i[len(op):-4])
+            elif i.startswith(res):
+                answers = i[len(res):-10]
+        if answers == None:
+            all_results.write(f'{query_number},error,error\n')
+        else:
+            all_results.write(f'{query_number},{int(total_time * 1000)},{answers}\n')
+
+
+def check_port_available():
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    location = ("127.0.0.1", MDB_PORT)
+    # Check if port is already in use
+    if s.connect_ex(location) == 0:
+        raise Exception("server port already in use")
+
+def execute_file(queries):
+    heatup = args.heatup
+    count = args.count
+
+    results_name = os.path.basename(queries)
+
+    print('Running file...')
+    if heatup:
+        print('Loading query data into the cache...')
+        with open(queries) as queries_file:
+            for line in queries_file:
+                query_number, query = line.split(',', 1)
+                query_millennium(query, query_number, results_name, second=True)
+
+    print('Required data has been loaded')
+    for i in range(count):
+        with open(queries) as queries_file:
+            for line in queries_file:
+                query_number, query = line.split(',', 1)
+                print(f'Executing query {query_number}')
+                query_millennium(query, query_number, results_name, second=True)
+
+    server_log.truncate(0)
+
+def execute_dir(queries_dir):
+    with os.scandir(queries_dir) as it:
+        for entry in it:
+            if entry.is_file():
+                execute_file(entry.path)
+
+def execute_queries():
+    queries = args.queries
+    if os.path.isdir(queries):
+        execute_dir(queries)
+    else:
+        execute_file(queries)
+
+########################## BEGIN BENCHMARK EXECUTION ##########################
+server_log = open(SERVER_LOG_FILE, 'w')
+server_process = None
+
+check_port_available()
+
+try:
+    start_server()
+    execute_queries()
+
+    server_log.close()
+finally:
+    if server_process is not None:
+        max_mem_cmd = f'grep ^VmHWM /proc/{server_process.pid}/status'.split(' ')
+        process = subprocess.Popen(max_mem_cmd, universal_newlines=True, stdout=subprocess.PIPE)
+        out, err = process.communicate()
+        print(out)
+        kill_server()
+

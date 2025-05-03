@@ -7,3 +7,6 @@
 [submodule "Databases/RPQ-matrix/rpq-matrix"]
 	path = Databases/RPQ-matrix/rpq-matrix
 	url = https://github.com/adriangbrandon/rpq-matrix
+[submodule "Databases/MillenniumDB-old/MillenniumDB"]
+	path = Databases/MillenniumDB-old/MillenniumDB
+	url = https://github.com/MillenniumDB/MillenniumDB
