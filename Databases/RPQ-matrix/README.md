@@ -27,7 +27,9 @@ At first you need to use rpq-matrix-specific converter to convert the dataset in
 **Note** this would also print you a parameters of the graph. You will need them later. Make sure to write them down somehow.
 
 ```
-```e
+Successfully converted ./dataset.nt
+Triples: 1000, vertices: 100, predicates: 5
+```
 
 Then you might follow README instructions in rpq-matrix to prepare the dataset.
 
