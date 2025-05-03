@@ -22,3 +22,16 @@ For running the experiments in a specific environment refer to `Databases` folde
 
 * [Semyon Grigorev](https://github.com/gsvgit) (mail: [s.v.grigoriev@mail.spbu.ru](mailto://s.v.grigoriev@mail.spbu.ru)).
 * [Georgiy Belyanin](https://github.com/georgiy-belyanin) (mail: [belyaningeorge@ya.ru](mailto://belyaningeorge@ya.ru)).
+* [Rodion Suvorov](https://github.com/suvorovrain) (mail: [rodion.suvorov.94@mail.ru](mailto://rodion.suvorov.94@mail.ru)).
+
+## Acknowledgments & copyright notices
+
+LA-RPQ is licensed under [GPL-2.0 license](https://www.gnu.org/licenses) and acknowledges the following projects and modifications made to them.
+
+* [MillenniumDB](https://github.com/MillenniumDB/MillenniumDB) licensed under GPL-2.0 used in two different versions with modifications to the RDF prefix handling. For more information see the `./Databases/MillenniumDB` directory.
+* [rpq-matrix](https://github.com/MillenniumDB/MillenniumDB) licensed under GPL-3.0 used both w/o modifications and with modifications to work with GraphBLAS.
+* [Blazegraph](https://github.com/blazegraph/database) licensed under GPL-2.0 used without modifications but with custom benchmarking scripts that uses procedures from the unlicensed [MillenniumDB WDBench](https://github.com/MillenniumDB/WDBench) but configured for different datasets and only for the Blazegraph database.
+
+We also appreciate [Vladimir Kutuev](https://github.com/vkutuev)(mail: [vladimir.kutuev@gmail.com](mailto://vladimir.kutuev@gmail.com)) for consulting us on the proper engineering approaches to use.
+
+Thank you for you interest in the la-rpq project.
