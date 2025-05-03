@@ -1,14 +1,16 @@
-# RPQbench
+# LD-RPQB (ex. RPQBench)
 
-The provided dataset is based on [RPQBench](https://github.com/Mamenglu/LD-RPQB). We truncate this dataset from properties and convert it into matrix-market adjacency matrices for linear algebra-based algorithms and into CSVs for Memgraph and FalkorDB.
+The provided dataset is based on [LD-RPQB (ex. RPQBench)](https://github.com/Mamenglu/LD-RPQB). We truncate this dataset from properties and convert it into matrix-market adjacency matrices for linear algebra-based algorithms and into CSVs for Memgraph and FalkorDB.
+
+**Note:** RPQBench has been renamed to LD-RPQB recently. Though the used names are still kind of mixed up.
 
 ## Processing the dataset
 
-The original dataset in the [N-triples](https://www.w3.org/TR/n-triples/) format and can be generated using `./RPQBench/LD-RPQB/bin/rpqbench_gen`.
+The original dataset in the [N-triples](https://www.w3.org/TR/n-triples/) format and can be generated using `./LD-RPQB/LD-RPQB/bin/rpqbench_gen`.
 
 ```bash
-cd RPQBench/rpqbench/bin && ./rpqbench_gen -t <triple_count> && cd ../../..
-cp RPQBench/rpqbench/bin/rpqbench.n3 .
+cd LD-RPQB/LD-RPQB/bin && ./rpqbench_gen -t <triple_count> && cd ../../..
+cp LD-RPQB/LD-RPQB/bin/rpqbench.n3 .
 
 # Create a Python venv and install requirements
 python -m venv ./.venv && source ./.venv/bin/activate

@@ -1,3 +1,6 @@
 [submodule "Databases/MillenniumDB/MillenniumDB"]
 	path = Databases/MillenniumDB/MillenniumDB
 	url = https://github.com/MillenniumDB/MillenniumDB
+[submodule "Datasets/RPQBench/LD-RPQB"]
+	path = Datasets/RPQBench/LD-RPQB
+	url = https://github.com/Mamenglu/LD-RPQB
