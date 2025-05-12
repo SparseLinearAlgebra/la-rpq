@@ -20,6 +20,7 @@ Output structure:
 p.add_argument('input', help='Input N-Triples file')
 p.add_argument('output', help='Output dir')
 p.add_argument('name', help='Output name')
+p.add_argument('-d', '--duplicate', action='store_true', help='Skip duplicates')
 
 args = p.parse_args()
 
@@ -33,7 +34,7 @@ with open(args.input, 'r', errors='ignore') as f, open(f'{d}/{n}.dat.SO', 'w') a
     gs = [0]
 
     total = 0
-
+    seen = set()
     i = 0
     j = 0
     for line in f:
@@ -55,8 +56,13 @@ with open(args.input, 'r', errors='ignore') as f, open(f'{d}/{n}.dat.SO', 'w') a
             i = i + 1
             vs[v2] = i
 
-        g.write(f"{vs[v1]} {ps[p]} {vs[v2]}\n")
+        triple = (vs[v1], ps[p], vs[v2])
+        if args.duplicate:
+            if triple in seen:
+                continue
+            seen.add(triple)
 
+        g.write(f"{triple[0]} {triple[1]} {triple[2]}\n")
         total += 1
 
     for key in vs:
