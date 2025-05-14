@@ -1,0 +1,3 @@
+#!/usr/bin/env sh
+
+../../Scripts/truncate --s="^<http://yago-knowledge.org/resource/" --p="^<http://yago-knowledge.org/resource/" --o="^<http://yago-knowledge.org/resource/" $1
