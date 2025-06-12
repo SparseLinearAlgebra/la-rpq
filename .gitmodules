@@ -10,3 +10,11 @@
 [submodule "Databases/MillenniumDB-old/MillenniumDB"]
 	path = Databases/MillenniumDB-old/MillenniumDB
 	url = https://github.com/MillenniumDB/MillenniumDB
+[submodule "Databases/Databases/RPQ-matrixGB/rpq-matrixgb"]
+	path = Databases/Databases/RPQ-matrixGB/rpq-matrixgb
+	url = https://github.com/suvorovrain/rpq-matrix.git
+	branch = gbmod
+[submodule "Databases/RPQ-matrixGB/rpq-matrixgb"]
+	path = Databases/RPQ-matrixGB/rpq-matrixgb
+	url = https://github.com/suvorovrain/rpq-matrix.git
+	branch = gbmod
