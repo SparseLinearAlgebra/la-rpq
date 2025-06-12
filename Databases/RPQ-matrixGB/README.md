@@ -57,7 +57,7 @@ Convert files with predicate matrices
 
 ## Running and benchmarking
 
-After preparing the dataset change define macros at 10th line of `./rpq-matrixgb/include/solver` to your predicates number obtained on previous step. Then [rebuild](./rpq-matrixgb/README.md) the library.
+After preparing the dataset change define macros at 10th line of `./rpq-matrixgb/include/solver` to your predicates number obtained on previous step. Then [rebuild](https://github.com/suvorovrain/rpq-matrix/blob/gbmod/README.md) the library.
 
 Then this it might be run as follows:
 ```bash
