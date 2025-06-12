@@ -21,7 +21,7 @@ pip install -r requirements.txt
 
 At first you need to remove duplicates from database.
 ```bash
-python3 remove-dups dataset-with-dups.nt > dataset.nt
+python3 remove-dups <dataset name> > dataset.nt
 ```
 
 Then use rpq-matrix converter to convert the dataset into the matrix market format.
@@ -57,7 +57,7 @@ Convert files with predicate matrices
 
 ## Running and benchmarking
 
-After preparing the dataset change define macros at 10th line of `./rpq-matrixgb/include/solver` to your predicates number obtained on previous step. Then rebuild the library.
+After preparing the dataset change define macros at 10th line of `./rpq-matrixgb/include/solver` to your predicates number obtained on previous step. Then [rebuild](./rpq-matrixgb/README.md) the library.
 
 Then this it might be run as follows:
 ```bash
