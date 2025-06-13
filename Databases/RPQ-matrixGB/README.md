@@ -27,7 +27,7 @@ python3 remove-dups <dataset name> > dataset.nt
 Then use rpq-matrix converter to convert the dataset into the matrix market format.
 
 ```bash
-./nt-to-mm dataset.nt <output name>
+python3 nt-to-mm dataset.nt <output name>
 ```
 
 **Note** this would also print you a parameters of the graph. You will need them later. Make sure to write them down somehow.
@@ -50,7 +50,7 @@ Now swap columns in SO and P files
 ```
 Convert files with predicate matrices
 ```bash
-../txt-to-mat dataset.dat.baseline-64
+python3 ../txt-to-mat dataset.dat.baseline-64
 ```
 
 
