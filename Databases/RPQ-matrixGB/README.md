@@ -11,7 +11,7 @@ This dependencies are needed in order for everything to work.
 
 ```bash
 # Set up a virtual env in .venv directory.
-python -m venv ./.venv && source ./.venv/bin/activate
+python3 -m venv ./.venv && source ./.venv/bin/activate
 
 # Install requirements
 pip install -r requirements.txt
@@ -21,13 +21,13 @@ pip install -r requirements.txt
 
 At first you need to remove duplicates from database.
 ```bash
-python3 remove-dups <dataset name> > dataset.nt
+./remove-dups <dataset name> > dataset.nt
 ```
 
 Then use rpq-matrix converter to convert the dataset into the matrix market format.
 
 ```bash
-python3 nt-to-mm dataset.nt <output name>
+./nt-to-mm dataset.nt <output name>
 ```
 
 **Note** this would also print you a parameters of the graph. You will need them later. Make sure to write them down somehow.
@@ -50,7 +50,7 @@ Now swap columns in SO and P files
 ```
 Convert files with predicate matrices
 ```bash
-python3 ../txt-to-mat dataset.dat.baseline-64
+./txt-to-mat dataset.dat.baseline-64
 ```
 
 
@@ -61,5 +61,5 @@ After preparing the dataset change define macros at 10th line of `./rpq-matrixgb
 
 Then this it might be run as follows:
 ```bash
-python3 bench <rpq-matrixGB build dir> <dataset dir>/<dataset name.dat> <queries> <predicate count> <triples count>
+./bench <rpq-matrixGB build dir> <dataset dir>/<dataset name.dat> <queries> <predicate count> <triples count>
 ```
