@@ -10,7 +10,7 @@ This dependencies are needed in order for everything to work.
 
 ```bash
 # Set up a virtual env in .venv directory.
-python -m venv ./.venv && source ./.venv/bin/activate
+python3 -m venv ./.venv && source ./.venv/bin/activate
 
 # Install requirements
 pip install -r requirements.txt
@@ -18,8 +18,17 @@ pip install -r requirements.txt
 
 ## Extra dataset preparements.
 
-At first you need to use rpq-matrix-specific converter to convert the dataset into the desired format.
+At first deprefix and truncate your dataset
+```bash
+./truncate  <dataset name> | ./deprefix-nt > dataset-trunc.nt
+```
 
+Remove duplicates from database.
+```bash
+./remove-dups dataset-trunc.nt > dataset.nt
+```
+
+Then use rpq-matrix-specific converter to convert the dataset into the desired format.
 ```bash
 ./nt-to-rpqm-txts <dataset.nt> <output dir> <output name>
 ```
@@ -30,6 +39,8 @@ At first you need to use rpq-matrix-specific converter to convert the dataset in
 Successfully converted ./dataset.nt
 Triples: 1000, vertices: 100, predicates: 5
 ```
+
+After preparing the dataset change define macros at 10th line of `./rpq-matrix/include/solver` to your predicates number obtained on previous step.
 
 Then you might follow README instructions in rpq-matrix to prepare the dataset.
 
