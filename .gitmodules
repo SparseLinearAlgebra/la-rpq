@@ -18,3 +18,10 @@
 	path = Databases/RPQ-matrixGB/rpq-matrixgb
 	url = https://github.com/suvorovrain/rpq-matrix.git
 	branch = gbmod
+[submodule "Databases/RPQ-matrixGB/GraphBLAS"]
+	path = Databases/RPQ-matrixGB/GraphBLAS
+	url = https://github.com/DrTimothyAldenDavis/GraphBLAS.git
+[submodule "Databases/RPQ-matrixGB/LAGraph"]
+	path = Databases/RPQ-matrixGB/LAGraph
+	url = https://github.com/SparseLinearAlgebra/LAGraph.git
+	branch = 2-rpq
