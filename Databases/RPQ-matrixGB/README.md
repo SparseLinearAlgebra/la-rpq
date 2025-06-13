@@ -1,5 +1,5 @@
 
-# Utils for benchmarking rpq-matrix
+# Utils for benchmarking rpq-matrix-GrB
 
 These are the utils we've used to benchmark [rpq-matrix-GraphBLAS](https://github.com/suvorovrain/rpq-matrix/tree/gbmod).
 
@@ -19,9 +19,14 @@ pip install -r requirements.txt
 
 ## Extra dataset preparements.
 
-At first you need to remove duplicates from database.
+At first deprefix and truncate your dataset
 ```bash
-./remove-dups <dataset name> > dataset.nt
+./truncate  <dataset name> | ./deprefix-nt > dataset-trunc.nt
+```
+
+Remove duplicates from database.
+```bash
+./remove-dups dataset-trunc.nt > dataset.nt
 ```
 
 Then use rpq-matrix converter to convert the dataset into the matrix market format.
