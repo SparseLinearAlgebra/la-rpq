@@ -61,5 +61,5 @@ After preparing the dataset change define macros at 10th line of `./rpq-matrixgb
 
 Then this it might be run as follows:
 ```bash
-./bench <rpq-matrixGB build dir> <dataset dir>/<dataset name.dat> <queries> <predicate count> <triples count>
+python3 bench <rpq-matrixGB build dir> <dataset dir>/<dataset name.dat> <queries> <predicate count> <triples count>
 ```
