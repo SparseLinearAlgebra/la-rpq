@@ -1,0 +1,31 @@
+#!/bin/bash
+
+SCRIPT_DIR=$(dirname "$(realpath "$0")")
+GRAPHBLAS_PATH="${SCRIPT_DIR}/GraphBLAS"
+GRAPHBLAS_BUILD="${GRAPHBLAS_PATH}/build"
+
+LAGRAPH_PATH="${SCRIPT_DIR}/LAGraph"
+LAGRAPH_BUILD="${LAGRAPH_PATH}/build"
+
+JOBS=$(nproc)
+
+echo "Building GraphBLAS"
+cmake -S "$GRAPHBLAS_PATH" -B "$GRAPHBLAS_BUILD" \
+    -G Ninja \
+    -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+    -DCMAKE_BUILD_TYPE=Release
+
+cmake --build "$GRAPHBLAS_BUILD" --parallel "$JOBS"
+
+echo "Building LAGraph"
+cmake -S "$LAGRAPH_PATH" -B "$LAGRAPH_BUILD" \
+    -G Ninja \
+    -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+    -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DGraphBLAS_DIR="$GRAPHBLAS_BUILD"
+
+cmake --build "$LAGRAPH_BUILD" --parallel "$JOBS"
+
+echo "Done."
