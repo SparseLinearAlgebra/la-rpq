@@ -2,6 +2,26 @@
 
 This is a repository with utils that can be used to reproduce experiments described in [Single-Source Regular Path Querying in Terms of Linear Algebra paper](https://arxiv.org/abs/2412.10287). The paper is about evaluating graph Regular Path Queries using linear algebra over sparse adjacency matrices implemented using [SuiteSparse:GraphBLAS](https://github.com/DrTimothyAldenDavis/GraphBLAS).
 
+## Repository structure
+
+The repository is organized as follows.
+
+```
+la-rpq/
+├── Datasets/           # Datasets and dataset-preparation scripts
+│   ├── Wikidata/       # Wikidata snapshot from MillenniumDB path-query-challenge
+│   ├── Yago-2S/        # Yago-2S knowledge base
+│   └── RPQBench/       # LD-RPQB (ex. RPQBench) synthetic benchmark
+├── Databases/          # Competitor databases and their benchmarking scripts
+│   ├── MillenniumDB/       # Current version of MillenniumDB
+│   ├── MillenniumDB-old/   # Old version used in path-query-challenge
+│   ├── RPQ-matrix/         # rpq-matrix (original)
+│   └── RPQ-matrixGB/       # rpq-matrix with GraphBLAS backend
+└── Scripts/            # Shared utility scripts for dataset preprocessing
+```
+
+Each subdirectory contains its own `README.md` with detailed instructions.
+
 ## Datasets
 
 Currently, we use the following datasets for the experiments information on which is available within the `Datasets` directory.
